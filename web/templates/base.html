@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="theme-color" content="#1a56db">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="M-Tirta">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <title>{% block title %}M-Tirta{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary : '#1a56db',
+                    accent  : '#1c64f2',
+                    surface : '#f9fafb',
+                }
+            }
+        }
+    }
+    </script>
+
+    <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body { background: #f3f4f6; }
+
+    /* app shell */
+    #app-shell {
+        max-width: 430px;
+        margin: 0 auto;
+        min-height: 100dvh;
+        background: #f3f4f6;
+        position: relative;
+    }
+
+    /* area konten */
+    #main-content {
+        padding-bottom: 80px; /* space untuk bottom nav */
+    }
+
+    /* bottom nav */
+    #bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 430px;
+        background: white;
+        border-top: 1px solid #e5e7eb;
+        z-index: 50;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* FAB button */
+    .fab-btn {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #1a56db;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: -20px;
+        box-shadow: 0 4px 14px rgba(26,86,219,0.4);
+    }
+
+    /* active nav item */
+    .nav-item.active svg { stroke: #1a56db; }
+    .nav-item.active span { color: #1a56db; font-weight: 600; }
+
+    /* card styles */
+    .card { background: white; border-radius: 16px; padding: 16px; }
+    .card-hero {
+        background: linear-gradient(135deg, #1a56db 0%, #1e40af 100%);
+        border-radius: 16px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    .card-hero::before {
+        content: '';
+        position: absolute;
+        bottom: -20px; right: -20px;
+        width: 120px; height: 120px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.08);
+    }
+    .card-hero::after {
+        content: '';
+        position: absolute;
+        bottom: 10px; right: 40px;
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.05);
+    }
+
+    /* icon badge */
+    .icon-badge {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+    }
+
+    /* modal */
+    .modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 100;
+        display: flex; align-items: flex-end;
+        justify-content: center;
+    }
+    .modal-sheet {
+        background: white;
+        border-radius: 20px 20px 0 0;
+        width: 100%; max-width: 430px;
+        padding: 24px;
+        max-height: 90dvh;
+        overflow-y: auto;
+    }
+    .modal-handle {
+        width: 40px; height: 4px;
+        background: #e5e7eb;
+        border-radius: 2px;
+        margin: 0 auto 16px;
+    }
+
+    /* input style */
+    .input-field {
+        width: 100%;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+        background: white;
+    }
+    .input-field:focus { border-color: #1a56db; }
+
+    /* button */
+    .btn-primary {
+        width: 100%;
+        background: #1a56db;
+        color: white;
+        border-radius: 12px;
+        padding: 13px;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    .btn-primary:active { opacity: 0.8; }
+    .btn-secondary {
+        width: 100%;
+        background: #f3f4f6;
+        color: #374151;
+        border-radius: 12px;
+        padding: 13px;
+        font-size: 15px;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+    }
+
+    /* list item */
+    .list-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .list-item:last-child { border-bottom: none; }
+
+    /* badge */
+    .badge {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .badge-red   { background: #fee2e2; color: #991b1b; }
+    .badge-orange{ background: #ffedd5; color: #9a3412; }
+    .badge-blue  { background: #dbeafe; color: #1e40af; }
+
+    /* scrollbar hide */
+    ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+
+<body>
+<div id="app-shell">
+
+{% if user %}
+<!-- TOP BAR -->
+<div class="bg-white px-4 py-3 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
+    <div class="flex items-center gap-2">
+        {% set cfg_logo = '' %}
+        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+            </svg>
+        </div>
+        <div>
+            <p class="text-sm font-bold text-gray-900 leading-none">M-Tirta</p>
+            <p class="text-xs text-gray-400 leading-none mt-0.5">PAM Tirta Lestari IV</p>
+        </div>
+    </div>
+    <div class="flex items-center gap-3">
+        <!-- notifikasi -->
+        <button onclick="bukaNotif()"
+                class="relative w-9 h-9 flex items-center justify-center rounded-full bg-gray-100">
+            <i data-lucide="bell" class="w-5 h-5 text-gray-600"></i>
+            <span id="notif-badge"
+                  class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full hidden"></span>
+        </button>
+        <!-- avatar -->
+        <a href="/pengurus" class="relative">
+            <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
+                <span class="text-white text-sm font-bold">{{ user.nama[0].upper() }}</span>
+            </div>
+            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 border-2 border-white rounded-full"></span>
+        </a>
+    </div>
+</div>
+
+<!-- PANEL NOTIFIKASI -->
+<div id="panel-notif"
+     class="hidden fixed inset-0 z-50 flex justify-center items-start pt-16">
+    <div class="absolute inset-0 bg-black/40"
+         onclick="tutupNotif()"></div>
+    <div class="relative bg-white rounded-2xl w-full max-w-[430px] mx-4
+                shadow-xl max-h-[70vh] overflow-hidden flex flex-col">
+        <div class="flex items-center justify-between px-4 py-3
+                    border-b border-gray-100">
+            <p class="font-semibold text-gray-900">Notifikasi</p>
+            <button onclick="tutupNotif()"
+                    class="text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div id="notif-content" class="overflow-y-auto px-4 py-2">
+            <p class="text-sm text-gray-400 text-center py-4">Memuat...</p>
+        </div>
+    </div>
+</div>
+
+<!-- KONTEN -->
+<div id="main-content" class="px-4 py-4">
+    {% block content %}{% endblock %}
+</div>
+
+<!-- BOTTOM NAVIGATION -->
+<nav id="bottom-nav">
+    <div class="flex items-center justify-around px-2 py-2">
+        <!-- Dashboard -->
+        <a href="/dashboard"
+           class="nav-item flex flex-col items-center gap-1 px-3 py-1
+                  {% if active_page == 'dashboard' %}active{% endif %}">
+            <i data-lucide="layout-dashboard"
+               class="w-5 h-5 {% if active_page == 'dashboard' %}stroke-primary{% else %}stroke-gray-400{% endif %}"></i>
+            <span class="text-xs {% if active_page == 'dashboard' %}text-primary font-semibold{% else %}text-gray-400{% endif %}">
+                Dashboard
+            </span>
+        </a>
+
+        <!-- Pelanggan -->
+        <a href="/pelanggan"
+           class="nav-item flex flex-col items-center gap-1 px-3 py-1
+                  {% if active_page == 'pelanggan' %}active{% endif %}">
+            <i data-lucide="users"
+               class="w-5 h-5 {% if active_page == 'pelanggan' %}stroke-primary{% else %}stroke-gray-400{% endif %}"></i>
+            <span class="text-xs {% if active_page == 'pelanggan' %}text-primary font-semibold{% else %}text-gray-400{% endif %}">
+                Pelanggan
+            </span>
+        </a>
+
+        <!-- FAB - Catat Meter -->
+        <a href="/meteran" class="flex flex-col items-center gap-1">
+            <div class="fab-btn">
+                <i data-lucide="plus" class="w-6 h-6 text-white stroke-white"></i>
+            </div>
+            <span class="text-xs text-gray-400 mt-1">Meteran</span>
+        </a>
+
+        <!-- Pembayaran -->
+        <a href="/pembayaran"
+           class="nav-item flex flex-col items-center gap-1 px-3 py-1
+                  {% if active_page == 'pembayaran' %}active{% endif %}">
+            <i data-lucide="wallet"
+               class="w-5 h-5 {% if active_page == 'pembayaran' %}stroke-primary{% else %}stroke-gray-400{% endif %}"></i>
+            <span class="text-xs {% if active_page == 'pembayaran' %}text-primary font-semibold{% else %}text-gray-400{% endif %}">
+                Pembayaran
+            </span>
+        </a>
+
+        <!-- Lainnya -->
+        <button onclick="toggleLainnya()"
+                class="nav-item flex flex-col items-center gap-1 px-3 py-1
+                       {% if active_page in ['pengeluaran','laporan','pengurus','developer'] %}active{% endif %}">
+            <i data-lucide="more-horizontal"
+               class="w-5 h-5 {% if active_page in ['pengeluaran','laporan','pengurus','developer'] %}stroke-primary{% else %}stroke-gray-400{% endif %}"></i>
+            <span class="text-xs {% if active_page in ['pengeluaran','laporan','pengurus','developer'] %}text-primary font-semibold{% else %}text-gray-400{% endif %}">
+                Lainnya
+            </span>
+        </button>
+    </div>
+</nav>
+
+<!-- MODAL LAINNYA -->
+<div id="modal-lainnya" class="modal-overlay hidden" onclick="toggleLainnya()">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <p class="text-xs font-semibold text-gray-400 uppercase mb-3">Menu Lainnya</p>
+        <div class="space-y-1">
+            <a href="/pengeluaran"
+               class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition">
+                <div class="icon-badge bg-red-50">
+                    <i data-lucide="trending-down" class="w-5 h-5 stroke-red-500"></i>
+                </div>
+                <span class="text-sm font-medium text-gray-800">Pengeluaran</span>
+            </a>
+            <a href="/laporan"
+               class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition">
+                <div class="icon-badge bg-purple-50">
+                    <i data-lucide="bar-chart-2" class="w-5 h-5 stroke-purple-500"></i>
+                </div>
+                <span class="text-sm font-medium text-gray-800">Laporan</span>
+            </a>
+            <a href="/pengurus"
+               class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition">
+                <div class="icon-badge bg-blue-50">
+                    <i data-lucide="shield" class="w-5 h-5 stroke-blue-500"></i>
+                </div>
+                <span class="text-sm font-medium text-gray-800">Pengurus</span>
+            </a>
+            {% if user.jabatan == 'developer' %}
+            <a href="/developer"
+               class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition">
+                <div class="icon-badge bg-gray-100">
+                    <i data-lucide="terminal" class="w-5 h-5 stroke-gray-600"></i>
+                </div>
+                <span class="text-sm font-medium text-gray-800">Developer Tools</span>
+            </a>
+            {% endif %}
+            <div class="border-t border-gray-100 mt-2 pt-2">
+                <a href="/api/auth/logout"
+                   class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-red-50 transition">
+                    <div class="icon-badge bg-red-50">
+                        <i data-lucide="log-out" class="w-5 h-5 stroke-red-500"></i>
+                    </div>
+                    <span class="text-sm font-medium text-red-500">Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+{% block auth_content %}{% endblock %}
+{% endif %}
+
+</div>
+
+<!-- SCRIPTS -->
+<script>
+// init lucide icons
+lucide.createIcons();
+
+// register service worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/sw.js');
+}
+
+// toggle modal lainnya
+function toggleLainnya() {
+    const modal = document.getElementById('modal-lainnya');
+    modal.classList.toggle('hidden');
+}
+
+// close modal on back button (PWA behavior)
+window.addEventListener('popstate', () => {
+    const modal = document.getElementById('modal-lainnya');
+    if (!modal.classList.contains('hidden')) {
+        modal.classList.add('hidden');
+    }
+});
+</script>
+
+<script>
+lucide.createIcons();
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/sw.js');
+}
+
+function toggleLainnya() {
+    document.getElementById('modal-lainnya').classList.toggle('hidden');
+}
+
+// notifikasi
+async function cekNotifCount() {
+    try {
+        const r = await fetch('/api/notifikasi/count');
+        const d = await r.json();
+        const badge = document.getElementById('notif-badge');
+        if (badge) {
+            if (d.count > 0) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+        }
+    } catch(e) {}
+}
+
+async function bukaNotif() {
+    document.getElementById('panel-notif').classList.remove('hidden');
+    const content = document.getElementById('notif-content');
+    content.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">Memuat...</p>';
+    try {
+        const r = await fetch('/api/notifikasi');
+        content.innerHTML = await r.text();
+        lucide.createIcons();
+        document.getElementById('notif-badge').classList.add('hidden');
+    } catch(e) {
+        content.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">Gagal memuat</p>';
+    }
+}
+
+function tutupNotif() {
+    document.getElementById('panel-notif').classList.add('hidden');
+}
+
+// cek badge tiap 30 detik
+cekNotifCount();
+setInterval(cekNotifCount, 30000);
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

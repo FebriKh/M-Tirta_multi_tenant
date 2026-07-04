@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% block title %}Developer Tools  M-Tirta{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800"> Developer Tools</h1>
+    <p class="text-orange-500 text-sm mt-1"> Halaman khusus developer. Hati-hati dalam melakukan perubahan.</p>
+</div>
+
+{% if request.query_params.get('inject') %}
+<div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm"> Saldo berhasil diinjek!</div>
+{% endif %}
+{% if request.query_params.get('sinkron') %}
+<div class="bg-blue-50 border border-blue-200 text-blue-700 rounded-lg px-4 py-3 mb-4 text-sm"> Kas berhasil disinkronisasi!</div>
+{% endif %}
+
+<!-- STATISTIK DATABASE -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs text-gray-500 uppercase">Total Pelanggan</p>
+        <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.total_pelanggan }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs text-gray-500 uppercase">Total Pengurus</p>
+        <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.total_pengurus }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs text-gray-500 uppercase">Record Meteran</p>
+        <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.total_meteran }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs text-gray-500 uppercase">Total Transaksi</p>
+        <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.total_transaksi }}</p>
+    </div>
+</div>
+
+<!-- INJECT SALDO -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+    <h2 class="font-semibold text-gray-800 mb-1"> Inject Saldo Kas</h2>
+    <p class="text-xs text-gray-500 mb-4">Gunakan untuk migrasi data historis atau dana bantuan masuk.</p>
+    <form method="POST" action="/developer/inject-saldo" class="space-y-4">
+        <div class="grid grid-cols-3 gap-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Bulan</label>
+                <select name="bulan"
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    {% for b in range(1, 13) %}
+                    <option value="{{ b }}" {% if b == now.month %}selected{% endif %}>{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Tahun</label>
+                <input type="number" name="tahun" value="{{ now.year }}" min="2020"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Saldo (Rp)</label>
+                <input type="number" name="saldo" min="0" step="1000" required
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Keterangan *</label>
+            <input type="text" name="keterangan" required
+                   placeholder="Contoh: Saldo awal migrasi data dari buku"
+                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
+        <button type="submit"
+                class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-accent transition">
+            Inject Saldo
+        </button>
+    </form>
+</div>
+
+<!-- SINKRON KAS -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="font-semibold text-gray-800 mb-1"> Sinkronisasi Manual Kas</h2>
+    <p class="text-xs text-gray-500 mb-4">Hitung ulang semua data kas untuk bulan tertentu.</p>
+    <form method="POST" action="/developer/sinkron-kas" class="flex gap-3 items-end">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Bulan</label>
+            <select name="bulan"
+                    class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                {% for b in range(1, 13) %}
+                <option value="{{ b }}" {% if b == now.month %}selected{% endif %}>{{ b }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Tahun</label>
+            <input type="number" name="tahun" value="{{ now.year }}" min="2020"
+                   class="border border-gray-200 rounded-lg px-3 py-2 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
+        <button type="submit"
+                class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-accent transition">
+            Sinkron Sekarang
+        </button>
+    </form>
+</div>
+
+<!-- tambahkan setelah section sinkron kas -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-6">
+    <div class="border-b border-gray-100">
+        <div class="flex" id="dev-tabs">
+            <button onclick="switchTab('tab-warna')"
+                    class="dev-tab px-6 py-3 text-sm font-medium border-b-2 border-primary text-primary" 
+                    id="btn-tab-warna">
+                 Warna & Teks
+            </button>
+            <button onclick="switchTab('tab-media')"
+                    class="dev-tab px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
+                    id="btn-tab-media">
+                 Logo & Background
+            </button>
+            <button onclick="switchTab('tab-info')"
+                    class="dev-tab px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
+                    id="btn-tab-info">
+                 Info Organisasi
+            </button>
+        </div>
+    </div>
+
+    <!-- TAB WARNA -->
+    <div id="tab-warna" class="p-6">
+        {% if request.query_params.get('warna') %}
+        <div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm"> Warna berhasil disimpan!</div>
+        {% endif %}
+        <form method="POST" action="/developer/simpan-warna" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4 max-w-md">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">Warna Primer (sidebar)</label>
+                    <div class="flex gap-2 items-center">
+                        <input type="color" name="warna_primer"
+                               value="{{ cfg.warna_primer or '#1F4E79' }}"
+                               class="w-10 h-10 rounded cursor-pointer border border-gray-200">
+                        <span class="text-xs text-gray-500">{{ cfg.warna_primer or '#1F4E79' }}</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">Warna Aksen (hover)</label>
+                    <div class="flex gap-2 items-center">
+                        <input type="color" name="warna_aksen"
+                               value="{{ cfg.warna_aksen or '#2E86AB' }}"
+                               class="w-10 h-10 rounded cursor-pointer border border-gray-200">
+                        <span class="text-xs text-gray-500">{{ cfg.warna_aksen or '#2E86AB' }}</span>
+                    </div>
+                </div>
+            </div>
+            <button type="submit"
+                    class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-accent transition">
+                Simpan Warna
+            </button>
+        </form>
+    </div>
+
+    <!-- TAB LOGO & BG -->
+    <div id="tab-media" class="p-6 hidden">
+        {% if request.query_params.get('logo') %}
+        <div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm"> Logo berhasil diupload!</div>
+        {% endif %}
+        {% if request.query_params.get('bg') %}
+        <div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm"> Background berhasil diupload!</div>
+        {% endif %}
+
+        <div class="grid grid-cols-2 gap-8">
+            <!-- LOGO -->
+            <div>
+                <h3 class="font-medium text-gray-800 mb-1">Logo Organisasi</h3>
+                <p class="text-xs text-gray-500 mb-3">PNG/JPG, maks 1MB. Disarankan 200x200px.</p>
+                {% if cfg.logo_file %}
+                <div class="mb-3">
+                    <img src="/static/assets/{{ cfg.logo_file }}"
+                         class="w-16 h-16 rounded-lg object-contain border border-gray-200">
+                    <p class="text-xs text-gray-400 mt-1">{{ cfg.logo_file }}</p>
+                </div>
+                {% endif %}
+                <form method="POST" action="/developer/upload-logo" enctype="multipart/form-data">
+                    <input type="file" name="logo" accept="image/*" required
+                           class="block text-xs text-gray-500 mb-2">
+                    <button type="submit"
+                            class="bg-primary text-white px-3 py-1.5 rounded-lg text-xs hover:bg-accent transition">
+                        Upload Logo
+                    </button>
+                </form>
+            </div>
+
+            <!-- BACKGROUND -->
+            <div>
+                <h3 class="font-medium text-gray-800 mb-1">Background Halaman Login</h3>
+                <p class="text-xs text-gray-500 mb-3">JPG/PNG, maks 3MB. Landscape lebih baik.</p>
+                {% if cfg.bg_login %}
+                <p class="text-xs text-gray-400 mb-2">Saat ini: {{ cfg.bg_login }}</p>
+                {% endif %}
+                <form method="POST" action="/developer/upload-bg" enctype="multipart/form-data">
+                    <input type="hidden" name="halaman" value="login">
+                    <input type="file" name="bg" accept="image/*" required
+                           class="block text-xs text-gray-500 mb-2">
+                    <button type="submit"
+                            class="bg-primary text-white px-3 py-1.5 rounded-lg text-xs hover:bg-accent transition">
+                        Upload Background
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB INFO -->
+    <div id="tab-info" class="p-6 hidden">
+        {% if request.query_params.get('info') %}
+        <div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm"> Info organisasi berhasil disimpan!</div>
+        {% endif %}
+        <form method="POST" action="/developer/simpan-info" class="space-y-4 max-w-md">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Nama Aplikasi</label>
+                <input type="text" name="nama_app"
+                       value="{{ cfg.nama_app or 'M-Tirta' }}"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Nama Organisasi</label>
+                <input type="text" name="nama_org"
+                       value="{{ cfg.nama_org or 'PAM Tirta Lestari IV' }}"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Alamat Organisasi</label>
+                <input type="text" name="alamat_org"
+                       value="{{ cfg.alamat_org or '' }}"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+            <button type="submit"
+                    class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-accent transition">
+                Simpan Info
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function switchTab(tabId) {
+    document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('hidden'));
+    document.querySelectorAll('.dev-tab').forEach(b => {
+        b.classList.remove('border-primary', 'text-primary');
+        b.classList.add('border-transparent', 'text-gray-500');
+    });
+    document.getElementById(tabId).classList.remove('hidden');
+    document.getElementById('btn-' + tabId).classList.add('border-primary', 'text-primary');
+    document.getElementById('btn-' + tabId).classList.remove('border-transparent', 'text-gray-500');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% set active_page = 'dashboard' %}
+{% block title %}Dashboard  M-Tirta{% endblock %}
+
+{% block content %}
+
+<!-- GREETING -->
+<div class="flex items-start justify-between mb-5">
+    <div>
+        <p class="text-xs text-gray-400">
+            {% if now.hour < 11 %}Selamat pagi
+            {% elif now.hour < 15 %}Selamat siang
+            {% elif now.hour < 18 %}Selamat sore
+            {% else %}Selamat malam{% endif %},
+        </p>
+        <h1 class="text-xl font-bold text-gray-900">{{ user.nama }}</h1>
+        <p class="text-xs text-gray-400 mt-0.5">Berikut ringkasan kinerja sistem hari ini.</p>
+    </div>
+    <button onclick="document.getElementById('modal-periode').classList.remove('hidden')"
+            class="border border-gray-200 rounded-xl px-3 py-2 text-center active:bg-gray-50">
+        <p class="text-xs text-gray-400">Periode</p>
+        <p class="font-semibold text-gray-800 text-sm">{{ bulan }}/{{ tahun }}</p>
+    </button>
+</div>
+
+<!-- HERO CARD: TOTAL SALDO KAS -->
+<div class="card-hero mb-3">
+    <div class="flex items-start justify-between">
+        <div>
+            <p class="text-blue-200 text-xs font-medium">Total Saldo Kas</p>
+
+            <p class="text-white text-2xl font-bold mt-1">
+                Rp {{ "{:,}".format(total_saldo_global or 0).replace(",", ".") }}
+            </p>
+
+        </div>
+
+        <div class="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center">
+            <i data-lucide="droplets" class="w-6 h-6 text-white"></i>
+        </div>
+    </div>
+
+    <div class="mt-4 pt-4 border-t border-white/15">
+        <p class="text-blue-200 text-xs mb-1">Pemasukan Bulan Ini (bersih)</p>
+        <p class="text-white text-lg font-bold">
+            Rp {{ "{:,}".format(pemasukan_bersih or 0).replace(",", ".") }}
+        </p>
+    </div>
+</div>
+
+<!-- STAT CARDS GRID -->
+<div class="grid grid-cols-2 gap-3 mb-3">
+    <!-- Target Tagihan -->
+    <div class="card">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-xs text-gray-500">Target Bulan Ini</p>
+            <div class="icon-badge bg-blue-50">
+                <i data-lucide="target" class="w-4 h-4 stroke-blue-500"></i>
+            </div>
+        </div>
+        <p class="text-lg font-bold text-gray-900">
+            Rp {{ "{:,}".format(total_tagihan).replace(",",".") }}
+        </p>
+    </div>
+
+    <!-- Terkumpul -->
+    <div class="card">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-xs text-gray-500">Sudah Terkumpul</p>
+            <div class="icon-badge bg-green-50">
+                <i data-lucide="wallet" class="w-4 h-4 stroke-green-500"></i>
+            </div>
+        </div>
+        <p class="text-lg font-bold text-green-600">
+            Rp {{ "{:,}".format(kas.aktual_terkumpul or 0).replace(",",".") }}
+        </p>
+    </div>
+
+    <!-- Belum Lunas -->
+    <div class="card">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-xs text-gray-500">Belum Lunas</p>
+            <div class="icon-badge bg-orange-50">
+                <i data-lucide="alert-circle" class="w-4 h-4 stroke-orange-500"></i>
+            </div>
+        </div>
+        <p class="text-lg font-bold text-orange-500">{{ jumlah_piutang }}</p>
+        {% if jumlah_piutang > 0 %}
+        <span class="badge badge-orange mt-1 inline-block">Perlu ditindaklanjuti</span>
+        {% endif %}
+    </div>
+
+    <!-- Pengeluaran -->
+    <div class="card">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-xs text-gray-500">Pengeluaran Bulan Ini</p>
+            <div class="icon-badge bg-red-50">
+                <i data-lucide="trending-down" class="w-4 h-4 stroke-red-500"></i>
+            </div>
+        </div>
+        <p class="text-lg font-bold text-red-500">
+            Rp {{ "{:,}".format(total_keluar).replace(",",".") }}
+        </p>
+    </div>
+</div>
+
+<!-- PIUTANG BELUM LUNAS -->
+{% if piutang %}
+<div class="card mb-3">
+    <div class="flex items-center justify-between mb-3">
+        <p class="font-semibold text-gray-900 text-sm">Piutang Belum Lunas</p>
+        <a href="/pembayaran" class="text-xs text-primary font-medium">Lihat Semua</a>
+    </div>
+    {% for m in piutang[:5] %}
+    <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+
+        <!-- KIRI -->
+        <div class="flex items-center gap-3 min-w-0">
+
+            <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <i data-lucide="user" class="w-4 h-4 stroke-primary"></i>
+            </div>
+
+            <div class="min-w-0">
+                <p class="text-sm font-semibold text-gray-800 truncate">
+                    {{ m.pelanggan.nama }}
+                </p>
+
+                <p class="text-xs text-gray-400 truncate">
+                    {{ m.pelanggan.area or "-" }}
+                </p>
+            </div>
+
+        </div>
+
+        <!-- KANAN -->
+        <div class="text-right shrink-0">
+
+            <div class="text-[11px] text-gray-400">
+                Total
+                <span class="text-gray-700 font-medium">
+                    Rp {{ "{:,}".format(m.total_tagihan).replace(",",".") }}
+                </span>
+            </div>
+
+            <div class="text-[11px] text-gray-400">
+                Sisa
+                <span class="text-red-500 font-bold">
+                    Rp {{ "{:,}".format(m.total_tagihan).replace(",",".") }}
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card mb-3">
+    <div class="flex items-center gap-3">
+        <div class="icon-badge bg-green-50">
+            <i data-lucide="check-circle" class="w-5 h-5 stroke-green-500"></i>
+        </div>
+        <p class="text-sm text-green-700 font-medium">
+            Semua tagihan bulan ini sudah lunas!
+        </p>
+    </div>
+</div>
+{% endif %}
+
+<!-- RINGKASAN KINERJA -->
+<div class="card mb-3">
+    <div class="flex items-center justify-between mb-3">
+        <p class="font-semibold text-gray-900 text-sm">Ringkasan Kinerja</p>
+        <a href="/laporan" class="text-xs text-primary font-medium">Lihat Laporan</a>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+        <div class="flex items-center gap-2">
+            <div class="icon-badge bg-blue-50">
+                <i data-lucide="users" class="w-4 h-4 stroke-blue-500"></i>
+            </div>
+            <div>
+                <p class="text-base font-bold text-gray-900">{{ total_pelanggan }}</p>
+                <p class="text-xs text-gray-400">Total Pelanggan</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="icon-badge bg-green-50">
+                <i data-lucide="droplets" class="w-4 h-4 stroke-green-500"></i>
+            </div>
+            <div>
+                <p class="text-base font-bold text-gray-900">{{ total_meteran }}</p>
+                <p class="text-xs text-gray-400">Catat Bulan Ini</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PERIODE -->
+<div id="modal-periode" class="modal-overlay hidden">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <p class="font-semibold text-gray-900 mb-4">Pilih Periode</p>
+        <form method="GET" action="/dashboard" class="space-y-3">
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Bulan</label>
+                <select name="bulan" class="input-field">
+                    {% for b in range(1, 13) %}
+                    <option value="{{ b }}" {% if b == bulan %}selected{% endif %}>
+                        {{ b }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Tahun</label>
+                <input type="number" name="tahun" value="{{ tahun }}"
+                       min="2020" class="input-field">
+            </div>
+            <button type="submit" class="btn-primary">Terapkan</button>
+            <button type="button" class="btn-secondary"
+                    onclick="document.getElementById('modal-periode').classList.add('hidden')">
+                Batal
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}<script>lucide.createIcons();</script>{% endblock %}

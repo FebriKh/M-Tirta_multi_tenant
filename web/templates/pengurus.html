@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+{% block title %}Pengurus  M-Tirta{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+
+    <div>
+        <h1 class="text-2xl font-bold text-gray-800">
+            Manajemen Pengurus
+        </h1>
+        <p class="text-sm text-gray-500">
+            Kelola akun dan struktur organisasi
+        </p>
+    </div>
+
+    {% if user.jabatan in ['ketua', 'bendahara', 'developer'] %}
+    <button
+        onclick="document.getElementById('modal-tambah').classList.remove('hidden')"
+        class="bg-primary text-white px-4 py-3 rounded-xl hover:bg-accent transition flex items-center gap-2 shadow-sm">
+
+        <i data-lucide="user-plus" class="w-4 h-4"></i>
+
+        <span class="font-medium">
+            Tambah
+        </span>
+
+    </button>
+    {% endif %}
+
+</div>
+{% if request.query_params.get('success') %}
+<div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm"> Pengurus berhasil ditambahkan!</div>
+{% endif %}
+{% if request.query_params.get('updated') %}
+<div class="bg-blue-50 border border-blue-200 text-blue-700 rounded-lg px-4 py-3 mb-4 text-sm"> Data pengurus berhasil diupdate!</div>
+{% endif %}
+{% if request.query_params.get('password') %}
+<div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm"> Password berhasil diubah! Silakan login ulang.</div>
+{% endif %}
+
+<!-- tambahkan setelah header, sebelum tabel -->
+<!-- SECTION AKUN SAYA -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+    <h2 class="font-semibold text-gray-800 mb-4"> Akun Saya</h2>
+    <div class="flex gap-8 items-start">
+
+        <!-- FOTO PROFIL -->
+        <div class="text-center">
+            {% set foto = "/assets/profil/" + user.nama|lower|replace(" ", "-") + ".webp" %}
+
+            <div class="w-20 h-20 rounded-full overflow-hidden bg-primary mb-2 mx-auto">
+
+                <img
+                    src="/profil/{{ user.nama }}"
+                    class="w-full h-full object-cover"
+                    onerror="this.remove(); this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-white text-3xl font-bold bg-primary'>{{ user.nama[0].upper() }}</div>'">
+
+                <div
+                    class="w-full h-full bg-primary text-white flex items-center justify-center"
+                    style="display:none;">
+
+                    <span class="text-3xl font-bold">
+                        {{ user.nama[0].upper() }}
+                    </span>
+
+                </div>
+
+            </div>
+            <form method="POST" action="/pengurus/upload-foto" enctype="multipart/form-data">
+                <label class="cursor-pointer text-xs text-primary hover:text-accent transition">
+                     Ganti Foto
+                    <input type="file" name="foto" accept="image/*" class="hidden"
+                           onchange="this.form.submit()">
+                </label>
+            </form>
+        </div>
+
+        <!-- INFO & GANTI PASSWORD -->
+        <div class="flex-1">
+            <p class="text-lg font-semibold text-gray-800">{{ user.nama }}</p>
+            <p class="text-sm text-primary font-medium mb-5 uppercase tracking-wide">{{ user.jabatan.upper() }}</p>
+
+            {% if user.jabatan != 'developer' %}
+            <div class="flex gap-3 mt-3">
+
+                <button
+                    type="button"
+                    onclick="document.getElementById('modal-akun').classList.remove('hidden')"
+                    class="inline-flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+
+                    <i data-lucide="settings-2" class="w-4 h-4 text-primary"></i>
+
+                    <span class="text-sm">
+                        Pengaturan Akun
+                    </span>
+
+                </button>  
+
+            </div>
+            {% else %}
+            <p class="text-xs text-gray-400 italic">Kredensial developer dikelola via .env di server.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- TABEL PENGURUS -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-100">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jabatan</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No HP</th>
+                {% if user.jabatan in ['ketua', 'developer'] %}
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+            {% for p in semua %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium text-gray-800">{{ p.nama }}</td>
+                <td class="px-4 py-3">
+                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
+                        {{ p.jabatan }}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-gray-500">{{ p.nomor_hp or '-' }}</td>
+                {% if user.jabatan in ['ketua', 'developer'] %}
+                <td class="px-4 py-3">
+                    <button onclick="bukaEditPengurus({{ p.id }}, '{{ p.nama }}', '{{ p.nomor_hp or '' }}', '{{ p.chat_id or '' }}', '{{ p.jabatan }}', '{{ p.user_web or '' }}')"
+                            class="text-blue-600 hover:text-blue-800 text-xs mr-2">Edit</button>
+                    <form method="POST" action="/pengurus/hapus/{{ p.id }}" class="inline"
+                          onsubmit="return confirm('Hapus {{ p.nama }}?')">
+                        <button type="submit" class="text-red-500 hover:text-red-700 text-xs">Hapus</button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- PENGATURAN ORGANISASI -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+
+    <h2 class="font-semibold text-gray-800 mb-4">
+        Pengaturan Organisasi
+    </h2>
+
+    <div class="space-y-2">
+
+        <!-- Logo -->
+        <button
+            onclick="document.getElementById('modal-logo').classList.remove('hidden')"
+            class="w-full flex items-center justify-between rounded-xl border border-gray-200 px-4 py-4 hover:bg-gray-50 transition">
+
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <i data-lucide="image" class="w-5 h-5 text-primary"></i>
+                </div>
+
+                <div class="text-left">
+                    <p class="font-medium text-gray-800">
+                        Logo Organisasi
+                    </p>
+                    <p class="text-xs text-gray-500">
+                        Ganti logo aplikasi
+                    </p>
+                </div>
+            </div>
+
+            <i data-lucide="chevron-right"
+               class="w-5 h-5 text-gray-400"></i>
+
+        </button>
+
+
+        <!-- Info -->
+        <button
+            onclick="document.getElementById('modal-info').classList.remove('hidden')"
+            class="w-full flex items-center justify-between rounded-xl border border-gray-200 px-4 py-4 hover:bg-gray-50 transition">
+
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <i data-lucide="building-2" class="w-5 h-5 text-primary"></i>
+                </div>
+
+                <div class="text-left">
+                    <p class="font-medium text-gray-800">
+                        Informasi Organisasi
+                    </p>
+                    <p class="text-xs text-gray-500">
+                        Nama, alamat dan identitas organisasi
+                    </p>
+                </div>
+            </div>
+
+            <i data-lucide="chevron-right"
+               class="w-5 h-5 text-gray-400"></i>
+
+        </button>
+
+    </div>
+</div>
+
+<!-- MODAL PENGATURAN AKUN -->
+
+<div id="modal-akun"
+     class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4">
+
+        <div class="flex items-center justify-between px-6 py-4 border-b">
+
+            <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+
+                <i data-lucide="settings-2"
+                   class="w-5 h-5 text-primary"></i>
+
+                Pengaturan Akun
+
+            </h2>
+
+            <button
+                onclick="document.getElementById('modal-akun').classList.add('hidden')"
+                class="text-gray-400 hover:text-gray-600">
+
+                ✕
+
+            </button>
+
+        </div>
+
+        <form method="POST"
+              action="/pengurus/ganti-password"
+              class="p-6 space-y-4">
+
+            <div>
+
+                <label class="block text-sm mb-1">
+                    Username Baru
+                </label>
+
+                <input
+                    type="text"
+                    name="user_web_baru"
+                    required
+                    class="w-full border rounded-lg px-3 py-2">
+
+            </div>
+
+            <div>
+
+                <label class="block text-sm mb-1">
+                    Password Baru
+                </label>
+
+                <input
+                    type="password"
+                    name="password_web_baru"
+                    required
+                    class="w-full border rounded-lg px-3 py-2">
+
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+
+                <button
+                    type="button"
+                    onclick="document.getElementById('modal-akun').classList.add('hidden')"
+                    class="px-4 py-2 rounded-lg border">
+
+                    Batal
+
+                </button>
+
+                <button
+                    type="submit"
+                    class="px-4 py-2 rounded-lg bg-primary text-white">
+
+                    Simpan
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- MODAL LOGO -->
+<div id="modal-logo"
+     class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4">
+
+        <div class="px-6 py-4 border-b flex items-center justify-between">
+
+            <h2 class="font-semibold text-lg">
+                Logo Organisasi
+            </h2>
+
+            <button
+                onclick="document.getElementById('modal-logo').classList.add('hidden')"
+                class="text-gray-400 hover:text-gray-600">
+
+                ✕
+
+            </button>
+
+        </div>
+
+        <form
+            action="/pengurus/upload-logo"
+            method="POST"
+            enctype="multipart/form-data"
+            class="p-6 space-y-5">
+
+            <div class="text-center">
+
+                <img
+                    src="/static/assets/{{ cfg.logo_file }}?v={{ range(1,999999)|random }}"
+                    class="w-28 h-28 object-contain mx-auto rounded-xl border p-2 bg-white">
+
+            </div>
+
+            <input
+                type="file"
+                name="logo"
+                accept="image/*"
+                required
+                class="block w-full text-sm">
+
+            <button
+                type="submit"
+                class="w-full bg-primary text-white rounded-xl py-3 hover:bg-accent">
+
+                Upload Logo Baru
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- MODAL TAMBAH -->
+<div id="modal-tambah" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-gray-800"> Tambah Pengurus</h2>
+            <button onclick="document.getElementById('modal-tambah').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        </div>
+        <form method="POST" action="/pengurus/tambah">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="col-span-2">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Nama *</label>
+                    <input type="text" name="nama" required
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">No HP</label>
+                    <input type="text" name="nomor_hp"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Chat ID Telegram</label>
+                    <input type="text" name="chat_id"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Jabatan</label>
+                    <select name="jabatan"
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="bendahara">Bendahara</option>
+                        <option value="ketua">Ketua</option>
+                        <option value="teknisi">Teknisi</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Username Web</label>
+                    <input type="text" name="user_web"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Password Web</label>
+                    <input type="password" name="password_web"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button type="button"
+                        onclick="document.getElementById('modal-tambah').classList.add('hidden')"
+                        class="border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-accent transition">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL EDIT -->
+<div id="modal-edit" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-gray-800"> Edit Pengurus</h2>
+            <button onclick="document.getElementById('modal-edit').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        </div>
+        <form id="form-edit-pengurus" method="POST" action="">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="col-span-2">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Nama *</label>
+                    <input type="text" name="nama" id="edit-nama" required
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">No HP</label>
+                    <input type="text" name="nomor_hp" id="edit-hp"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Chat ID</label>
+                    <input type="text" name="chat_id" id="edit-chatid"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Jabatan</label>
+                    <select name="jabatan" id="edit-jabatan"
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="bendahara">Bendahara</option>
+                        <option value="ketua">Ketua</option>
+                        <option value="teknisi">Teknisi</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Username Web</label>
+                    <input type="text" name="user_web" id="edit-userweb"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Password Web Baru (kosongkan jika tidak diubah)</label>
+                    <input type="password" name="password_web"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button type="button"
+                        onclick="document.getElementById('modal-edit').classList.add('hidden')"
+                        class="border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-accent transition">
+                    Update
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function bukaEditPengurus(id, nama, hp, chatid, jabatan, userweb) {
+    document.getElementById('edit-nama').value    = nama;
+    document.getElementById('edit-hp').value      = hp;
+    document.getElementById('edit-chatid').value  = chatid;
+    document.getElementById('edit-jabatan').value = jabatan;
+    document.getElementById('edit-userweb').value = userweb;
+    document.getElementById('form-edit-pengurus').action = '/pengurus/edit/' + id;
+    document.getElementById('modal-edit').classList.remove('hidden');
+}
+</script>
+{% endblock %}

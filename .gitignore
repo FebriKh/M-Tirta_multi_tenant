@@ -1,0 +1,28 @@
+# --- Lingkungan Python ---
+venv/
+env/
+ENV/
+.env
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Konfigurasi & Data Sensitif ---
+# Pastikan config.json tidak terupload jika berisi password/rahasia
+# Jika tenant config.json harus ada, jangan masukkan baris ini
+tenants/*/config.json
+
+# --- Backup File ---
+*.bak
+*.tmp
+*.log
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- IDE/Editor ---
+.vscode/
+.idea/

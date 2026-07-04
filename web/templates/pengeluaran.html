@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Pengeluaran  M-Tirta{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-gray-800"> Pengeluaran</h1>
+    {% if user.jabatan in ['bendahara', 'developer'] %}
+    <button onclick="document.getElementById('modal-tambah').classList.remove('hidden')"
+            class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition text-sm font-medium">
+        + Catat Pengeluaran
+    </button>
+    {% endif %}
+</div>
+
+{% if request.query_params.get('success') %}
+<div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm">
+     Pengeluaran berhasil dicatat!
+</div>
+{% endif %}
+
+<!-- FILTER -->
+<form method="GET" action="/pengeluaran"
+      class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+    <div class="flex gap-3 items-end">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Bulan</label>
+            <select name="bulan"
+                    class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                {% for b in bulan_list %}
+                <option value="{{ b }}" {% if b == bulan %}selected{% endif %}>{{ b }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Tahun</label>
+            <input type="number" name="tahun" value="{{ tahun }}" min="2020"
+                   class="border border-gray-200 rounded-lg px-3 py-2 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
+        <button type="submit"
+                class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-accent transition">
+            Tampilkan
+        </button>
+    </div>
+</form>
+
+<!-- TOTAL -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+    <p class="text-xs text-gray-500 uppercase font-medium">Total Pengeluaran Bulan Ini</p>
+    <p class="text-2xl font-bold text-red-500 mt-1">
+        Rp {{ "{:,}".format(total).replace(",",".") }}
+    </p>
+</div>
+
+<!-- TABEL -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-100">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keperluan</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Direquest</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+            {% for p in data %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-xs text-gray-500">
+                    {{ p.tanggal.strftime('%d/%m/%Y') }}
+                </td>
+                <td class="px-4 py-3 text-gray-800">{{ p.keperluan }}</td>
+                <td class="px-4 py-3 text-right font-medium text-red-500">
+                    Rp {{ "{:,}".format(p.jumlah).replace(",",".") }}
+                </td>
+                <td class="px-4 py-3 text-gray-500">{{ p.direquest_oleh or '-' }}</td>
+                <td class="px-4 py-3 text-gray-500 text-xs">{{ p.keterangan or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-gray-400">
+                    Belum ada pengeluaran bulan ini
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if user.jabatan in ['bendahara', 'developer'] %}
+<!-- MODAL TAMBAH -->
+<div id="modal-tambah" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-gray-800"> Catat Pengeluaran</h2>
+            <button onclick="document.getElementById('modal-tambah').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        </div>
+        <form method="POST" action="/pengeluaran/catat">
+            <div class="space-y-4 mb-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Keperluan *</label>
+                    <textarea name="keperluan" required rows="2"
+                              placeholder="Contoh: Beli token listrik pompa air"
+                              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Jumlah (Rp) *</label>
+                    <input type="number" name="jumlah" min="0" step="1000" required
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Direquest Oleh</label>
+                    <select name="direquest_oleh"
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="">-- Pilih --</option>
+                        {% for p in pengurus_list %}
+                        <option value="{{ p.nama }}">{{ p.nama }} ({{ p.jabatan }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Keterangan</label>
+                    <input type="text" name="keterangan"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                           placeholder="Opsional">
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button type="button"
+                        onclick="document.getElementById('modal-tambah').classList.add('hidden')"
+                        class="border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-accent transition">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

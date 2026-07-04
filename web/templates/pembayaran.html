@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+{% block title %}Pembayaran  M-Tirta{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800"> Pembayaran</h1>
+</div>
+
+<!-- NOTIFIKASI -->
+{% if request.query_params.get('success') %}
+<div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm">
+     Pembayaran berhasil dicatat!
+</div>
+{% endif %}
+{% if request.query_params.get('error') %}
+<div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-4 text-sm">
+     {{ request.query_params.get('error') }}
+</div>
+{% endif %}
+
+<!-- FILTER -->
+<form method="GET" action="/pembayaran"
+      class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+    <div class="flex gap-3 items-end">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Bulan</label>
+            <select name="bulan"
+                    class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                {% for b in bulan_list %}
+                <option value="{{ b }}" {% if b == bulan %}selected{% endif %}>{{ b }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Tahun</label>
+            <input type="number" name="tahun" value="{{ tahun }}" min="2020"
+                   class="border border-gray-200 rounded-lg px-3 py-2 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
+        <button type="submit"
+                class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-accent transition">
+            Tampilkan
+        </button>
+    </div>
+</form>
+
+<div class="space-y-6">
+    <!-- TAGIHAN BELUM LUNAS -->
+    {% if user.jabatan in ['bendahara', 'developer'] %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800"> Tagihan Belum Lunas ({{ total_tagihan }})</h2>
+        </div>
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Area</th>
+                    <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tagihan</th>
+                    <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% for item in belum_lunas %}
+                <tr class="hover:bg-gray-50 transition">
+
+                    <td class="px-3 py-3 font-medium text-gray-800">
+                        {{ item.pelanggan_nama }}
+
+                        {% if item.jml_tunggakan > 1 %}
+                        <div class="mt-1">
+                            <span class="bg-orange-100 text-orange-600 text-[10px] px-2 py-0.5 rounded-full">
+                                {{ item.jml_tunggakan }} bulan
+                            </span>
+                        </div>
+                        {% endif %}
+
+                    </td>
+
+                    <td class="px-3 py-3 text-gray-500">
+                        {{ item.pelanggan_area }}
+                    </td>
+
+                    <td class="px-3 py-3 text-right">
+
+                        <p class="font-bold text-red-500">
+                            Rp {{ "{:,}".format(item.sisa).replace(",",".") }}
+                        </p>
+
+                    </td>
+
+                    <td class="px-3 py-3 text-center">
+
+                        <button
+                            onclick="bukaBayar({{ item.meteran_id }},'{{ item.pelanggan_nama }}',{{ item.sisa }},{{ bulan }},{{ tahun }})"
+                            class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg hover:bg-accent transition">
+
+                            Bayar
+
+                        </button>
+
+                    </td>
+
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-4 py-6 text-center text-green-600 text-sm">
+                         Semua tagihan bulan ini sudah lunas!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if total_page_tagihan > 1 %}
+        <div class="flex justify-center gap-2 py-4 border-t border-gray-100">
+
+            {% if page_tagihan > 1 %}
+            <a href="/pembayaran?bulan={{ bulan }}&tahun={{ tahun }}&page_tagihan={{ page_tagihan-1 }}"
+               class="px-3 py-1 border rounded-lg hover:bg-gray-50">
+                &lsaquo;
+            </a>
+            {% endif %}
+
+            {% for i in range(1,total_page_tagihan+1) %}
+            <a href="/pembayaran?bulan={{ bulan }}&tahun={{ tahun }}&page_tagihan={{ i }}"
+               class="px-3 py-1 rounded-lg text-sm
+               {% if i==page_tagihan %}
+               bg-primary text-white
+               {% else %}
+               border border-gray-200 hover:bg-gray-50
+               {% endif %}">
+                {{ i }}
+            </a>
+            {% endfor %}
+
+            {% if page_tagihan < total_page_tagihan %}
+            <a href="/pembayaran?bulan={{ bulan }}&tahun={{ tahun }}&page_tagihan={{ page_tagihan+1 }}"
+               class="px-3 py-1 border rounded-lg hover:bg-gray-50">
+                &rsaquo;
+            </a>
+            {% endif %}
+
+        </div>
+        {% endif %}
+
+        </div>
+        {% endif %}
+
+    <!-- RIWAYAT PEMBAYARAN -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800"> Riwayat Transaksi</h2>
+        </div>
+        <div class="divide-y divide-gray-100">
+
+        {% for r in riwayat %}
+
+        <div class="p-3 hover:bg-gray-50 transition">
+
+            <!-- Header -->
+            <div class="flex items-start justify-between">
+
+                <div class="flex items-center gap-3">
+
+                    <div class="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center">
+                        <i data-lucide="wallet" class="w-5 h-5 text-green-600"></i>
+                    </div>
+
+                    <div>
+
+                        <p class="font-semibold text-gray-800">
+                            {{ r.nama }}
+                        </p>
+
+                        {% if r.area %}
+                        <p class="text-xs text-gray-400">
+                            {{ r.area }}
+                        </p>
+                        {% endif %}
+
+                        <p class="text-xs text-gray-400">
+                            {{ r.tanggal }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+                {% if r.status == "lunas" %}
+                <span class="bg-green-100 text-green-700 text-[11px] px-2 py-1 rounded-full">
+                    Lunas
+                </span>
+                {% else %}
+                <span class="bg-yellow-100 text-yellow-700 text-[11px] px-2 py-1 rounded-full">
+                    Cicilan
+                </span>
+                {% endif %}
+
+            </div>
+
+            <!-- Nominal -->
+
+            <div class="mt-2">
+
+                <p class="text-lg font-bold text-green-600">
+
+                    Rp {{ "{:,}".format(r.jumlah).replace(",",".") }}
+
+                </p>
+
+            </div>
+
+        </div>
+
+        {% else %}
+
+        <div class="p-8 text-center">
+
+            <div class="w-12 h-12 rounded-full bg-gray-100 mx-auto flex items-center justify-center mb-3">
+
+                <i data-lucide="wallet" class="w-6 h-6 text-gray-400"></i>
+
+            </div>
+
+            <p class="text-gray-500 text-sm">
+
+                Belum ada transaksi
+
+            </p>
+
+        </div>
+
+        {% endfor %}
+
+        </div>
+    </div>
+    {% if total_page_riwayat > 1 %}
+    <div class="flex justify-center gap-2">
+
+        {% if page_riwayat > 1 %}
+        <a href="/pembayaran?bulan={{ bulan }}&tahun={{ tahun }}&page_riwayat={{ page_riwayat-1 }}"
+           class="px-3 py-1 border rounded-lg hover:bg-gray-50">
+            &lsaquo;
+        </a>
+        {% endif %}
+
+        {% for i in range(1,total_page_riwayat+1) %}
+        <a href="/pembayaran?bulan={{ bulan }}&tahun={{ tahun }}&page_riwayat={{ i }}"
+           class="px-3 py-1 rounded-lg text-sm
+           {% if i==page_riwayat %}
+           bg-primary text-white
+           {% else %}
+           border border-gray-200 hover:bg-gray-50
+           {% endif %}">
+            {{ i }}
+        </a>
+        {% endfor %}
+
+        {% if page_riwayat < total_page_riwayat %}
+        <a href="/pembayaran?bulan={{ bulan }}&tahun={{ tahun }}&page_riwayat={{ page_riwayat+1 }}"
+           class="px-3 py-1 border rounded-lg hover:bg-gray-50">
+            &rsaquo;
+        </a>
+        {% endif %}
+
+    </div>
+    {% endif %}
+</div>
+
+{% if user.jabatan in ['bendahara', 'developer'] %}
+<!-- MODAL BAYAR -->
+<div id="modal-bayar" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-gray-800"> Catat Pembayaran</h2>
+            <button onclick="document.getElementById('modal-bayar').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        </div>
+        <form method="POST" action="/pembayaran/catat">
+            <input type="hidden" name="meteran_id" id="bayar-meteran-id">
+            <input type="hidden" name="bulan" id="bayar-bulan">
+            <input type="hidden" name="tahun" id="bayar-tahun">
+            <div class="space-y-4 mb-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Pelanggan</label>
+                    <p id="bayar-nama" class="font-medium text-gray-800 text-sm"></p>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Sisa Tagihan</label>
+                    <p id="bayar-sisa-text" class="font-bold text-red-500 text-sm"></p>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Jumlah Bayar (Rp) *</label>
+                    <input type="number" name="jumlah_bayar" id="bayar-jumlah"
+                           min="1000" step="1000" required
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Diskon (Rp)</label>
+                    <input type="number" name="diskon" value="0" min="0" step="1000"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Metode *</label>
+                    <div class="flex gap-3">
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="radio" name="metode" value="cash" checked> Cash
+                        </label>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="radio" name="metode" value="transfer"> Transfer
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Catatan</label>
+                    <input type="text" name="catatan"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                           placeholder="Opsional">
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button type="button"
+                        onclick="document.getElementById('modal-bayar').classList.add('hidden')"
+                        class="border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-accent transition">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function bukaBayar(meteranId, nama, sisa, bulan, tahun) {
+    document.getElementById('bayar-meteran-id').value = meteranId;
+    document.getElementById('bayar-bulan').value      = bulan;
+    document.getElementById('bayar-tahun').value      = tahun;
+    document.getElementById('bayar-nama').textContent = nama;
+    document.getElementById('bayar-sisa-text').textContent =
+        'Rp ' + sisa.toLocaleString('id-ID');
+    document.getElementById('bayar-jumlah').value     = sisa;
+    document.getElementById('bayar-jumlah').max       = sisa;
+    document.getElementById('modal-bayar').classList.remove('hidden');
+}
+</script>
+{% endif %}
+{% endblock %}
+
