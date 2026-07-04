@@ -1,5 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Login  M-Tirta{% endblock %}
+{% block title %}
+Login {{ cfg.nama_app if cfg else "M-Tirta" }}
+{% endblock %}
 
 {% block auth_content %}
 <div class="min-h-screen bg-gradient-to-br from-primary to-accent
@@ -9,8 +11,12 @@
         <!-- Header -->
         <div class="text-center mb-8">
             <div class="text-5xl mb-3"></div>
-            <h1 class="text-2xl font-bold text-primary">M-Tirta</h1>
-            <p class="text-gray-500 text-sm mt-1">PAM Tirta Lestari IV</p>
+            <h1 class="text-2xl font-bold text-primary">
+                {{ cfg.nama_app if cfg else "M-Tirta" }}
+            </h1>
+            <p class="text-gray-500 text-sm mt-1">
+                {{ cfg.nama_org if cfg else "PAM Tirta Lestari IV" }}
+            </p>
         </div>
 
         <!-- Error -->
@@ -51,7 +57,7 @@
         </form>
 
         <p class="text-center text-xs text-gray-400 mt-6">
-            M-Tirta v3.0  Sistem Manajemen Air
+            {{ cfg.nama_app if cfg else "M-Tirta" }} v3.0 Sistem Manajemen Air
         </p>
     </div>
 </div>

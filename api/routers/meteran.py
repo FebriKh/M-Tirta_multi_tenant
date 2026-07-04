@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from shared.backend.template import render_template
 from sqlalchemy.orm import Session
 from shared.backend.database import get_db
 from shared.backend.crud import *
@@ -12,7 +12,6 @@ from api.dependencies import get_current_user
 from datetime import datetime
 
 router    = APIRouter(tags=["meteran"])
-templates = Jinja2Templates(directory="web/templates")
 
 @router.get("/meteran", response_class=HTMLResponse)
 async def meteran_page(
@@ -46,7 +45,7 @@ async def meteran_page(
             "status"       : "Lunas" if sisa == 0 else "Belum Lunas"
         })
 
-    return templates.TemplateResponse(
+    return render_template(
         request = request,
         name    = "meteran.html",
         context = {

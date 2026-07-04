@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, FileResponse
-from fastapi.templating import Jinja2Templates
+from shared.backend.template import render_template
 from sqlalchemy.orm import Session
 from shared.backend.database import get_db
 from shared.backend.crud import *
@@ -12,7 +12,6 @@ from api.dependencies import get_current_user
 from datetime import datetime
 
 router    = APIRouter(tags=["laporan"])
-templates = Jinja2Templates(directory="web/templates")
 
 def get_periode_list(bulan_awal, tahun_awal, bulan_akhir, tahun_akhir):
     periode = []
@@ -65,7 +64,7 @@ async def laporan_page(
 
     kas_akhir = sinkron_kas(db, bulan_akhir, tahun_akhir)
 
-    return templates.TemplateResponse(
+    return render_template(
         request = request,
         name    = "laporan.html",
         context = {

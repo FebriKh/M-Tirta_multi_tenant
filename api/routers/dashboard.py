@@ -4,8 +4,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from shared.backend.template import render_template
 from shared.backend.database import get_db
 from shared.backend.crud import *
 from shared.backend.crud.crud_notifikasi import (get_notif_terbaru,
@@ -15,7 +15,6 @@ from shared.backend.crud.crud_kas import get_total_saldo_global
 from datetime import datetime
 
 router    = APIRouter(tags=["dashboard"])
-templates = Jinja2Templates(directory="web/templates")
 
 @router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(
@@ -46,7 +45,7 @@ async def dashboard(
         total_keluar
     )
 
-    return templates.TemplateResponse(
+    return render_template(
         request = request,
         name    = "dashboard.html",
         context = {

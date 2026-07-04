@@ -1,35 +1,18 @@
 # M-Tirta/api/routers/developer.py
-import json
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from shared.backend.template import render_template
 from sqlalchemy.orm import Session
 from shared.backend.database import get_db
+from shared.backend.tenant_config import (tenant_config, save_tenant_config,)
 from shared.backend.crud import *
 from api.dependencies import get_current_user, require_role
 from datetime import datetime
 
 router    = APIRouter(tags=["developer"])
-templates = Jinja2Templates(directory="web/templates")
-TENANT_DIR  = "/root/M-Tirta/tenants/tirta-lestari-iv"
-CONFIG_FILE = os.path.join(TENANT_DIR, "config.json")
-ASSETS_DIR  = os.path.join(TENANT_DIR, "assets")
-os.makedirs(ASSETS_DIR, exist_ok=True)
-
-def load_tenant_config() -> dict:
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE) as f:
-            return json.load(f)
-    return {}
-
-def save_tenant_config(data: dict):
-    cfg = load_tenant_config()
-    cfg.update(data)
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(cfg, f, indent=4, ensure_ascii=False)
 
 @router.get("/developer", response_class=HTMLResponse)
 async def developer_page(
@@ -47,9 +30,9 @@ async def developer_page(
         "total_meteran"  : db.query(Meteran).count(),
         "total_transaksi": db.query(Pembayaran).count(),
     }
-    cfg = load_tenant_config()
+    cfg = tenant_config(user["tenant_id"])
 
-    return templates.TemplateResponse(
+    return render_template(
         request = request,
         name    = "developer.html",
         context = {
@@ -66,10 +49,13 @@ async def simpan_warna(
     warna_aksen   : str = Form(...),
     user          : dict = Depends(require_role(["developer"]))
 ):
-    save_tenant_config({
-        "warna_primer": warna_primer,
-        "warna_aksen" : warna_aksen
-    })
+    save_tenant_config(
+        user["tenant_id"],
+        {
+            "warna_primer": warna_primer,
+            "warna_aksen": warna_aksen
+        }
+    )
     return RedirectResponse(url="/developer?warna=1", status_code=302)
 
 @router.post("/developer/simpan-info")
@@ -79,11 +65,14 @@ async def simpan_info(
     alamat_org  : str = Form(""),
     user        : dict = Depends(require_role(["developer"]))
 ):
-    save_tenant_config({
-        "nama_app"  : nama_app,
-        "nama_org"  : nama_org,
-        "alamat_org": alamat_org
-    })
+    save_tenant_config(
+        user["tenant_id"],
+        {
+            "nama_app": nama_app,
+            "nama_org": nama_org,
+            "alamat_org": alamat_org
+        }
+    )
     return RedirectResponse(url="/developer?info=1", status_code=302)
 
 @router.post("/developer/upload-logo")
@@ -97,7 +86,12 @@ async def upload_logo(
     import shutil
     with open(filepath, "wb") as f:
         shutil.copyfileobj(logo.file, f)
-    save_tenant_config({"logo_file": filename})
+    save_tenant_config(
+        user["tenant_id"],
+        {
+            "logo_file": filename
+        }
+    )
     return RedirectResponse(url="/developer?logo=1", status_code=302)
 
 @router.post("/developer/upload-bg")
@@ -112,7 +106,12 @@ async def upload_bg(
     import shutil
     with open(filepath, "wb") as f:
         shutil.copyfileobj(bg.file, f)
-    save_tenant_config({f"bg_{halaman}": filename})
+    save_tenant_config(
+        user["tenant_id"],
+        {
+            f"bg_{halaman}": filename
+        }
+    )
     return RedirectResponse(url="/developer?bg=1", status_code=302)
 
 @router.post("/developer/inject-saldo")

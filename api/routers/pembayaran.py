@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from shared.backend.template import render_template
 from sqlalchemy.orm import Session
 
 from shared.backend.database import get_db
@@ -15,7 +15,6 @@ from api.dependencies import get_current_user
 from datetime import datetime
 
 router = APIRouter(tags=["pembayaran"])
-templates = Jinja2Templates(directory="web/templates")
 
 PER_PAGE_TAGIHAN = 10
 PER_PAGE_RIWAYAT = 10
@@ -119,7 +118,7 @@ async def pembayaran_page(
 
     rows_riwayat = rows_riwayat[start:start + PER_PAGE_RIWAYAT]
 
-    return templates.TemplateResponse(
+    return render_template(
         request=request,
         name="pembayaran.html",
         context={
