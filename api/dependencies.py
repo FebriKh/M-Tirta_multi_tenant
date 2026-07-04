@@ -43,8 +43,11 @@ def get_current_user(
     request: Request,
     db: Session = Depends(get_db)
 ) -> dict:
+
+
     """ambil user dari cookie token"""
     token = request.cookies.get("access_token")
+
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

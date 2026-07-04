@@ -207,16 +207,23 @@
 <!-- TOP BAR -->
 <div class="bg-white px-4 py-3 flex items-center justify-between sticky top-0 z-40 border-b border-gray-100">
     <div class="flex items-center gap-2">
-        {% set cfg_logo = '' %}
-        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
-            </svg>
+
+        <div class="w-8 h-8 rounded-lg overflow-hidden bg-white border border-gray-200 flex items-center justify-center">
+            <img
+                src="/logo?v={{ range(1,999999)|random }}"
+                class="w-full h-full object-contain">
         </div>
+
         <div>
-            <p class="text-sm font-bold text-gray-900 leading-none">M-Tirta</p>
-            <p class="text-xs text-gray-400 leading-none mt-0.5">PAM Tirta Lestari IV</p>
+            <p class="text-sm font-bold text-gray-900 leading-none">
+                {{ cfg.nama_app if cfg else "M-Tirta" }}
+            </p>
+
+            <p class="text-xs text-gray-400 leading-none mt-0.5">
+                {{ cfg.nama_org if cfg else "PAM Tirta Lestari IV" }}
+            </p>
         </div>
+
     </div>
     <div class="flex items-center gap-3">
         <!-- notifikasi -->

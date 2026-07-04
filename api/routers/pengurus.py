@@ -8,10 +8,11 @@ from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from sqlalchemy.orm import Session
+from shared.backend.template import render_template
 from shared.backend.database import get_db
 from shared.backend.crud import *
-from shared.assets.image_processor import (save_profile_image, save_logo_image, slugify)
-from shared.backend.tenant_assets import (profil_dir, asset_dir, logo_file, tenant_config)
+from shared.assets.image_processor import (save_profile_image, save_logo_image, slugify,)
+from shared.backend.tenant_assets import (profil_dir, asset_dir, logo_file, current_tenant, tenant_config,)
 from api.dependencies import get_current_user
 
 router    = APIRouter(tags=["pengurus"])
@@ -25,12 +26,10 @@ async def pengurus_page(
 ):
     semua = get_all_pengurus(db)
 
-    cfg = tenant_config(user["tenant_id"])
-
-    return templates.TemplateResponse(
+    return render_template(
         request = request,
         name    = "pengurus.html",
-        context = {"user": user, "semua": semua, "cfg": cfg}
+        context = {"user": user, "semua": semua}
     )
 
 @router.post("/pengurus/upload-foto")
@@ -39,29 +38,20 @@ async def upload_foto(
     request: Request = None,
     user: dict = Depends(get_current_user)
 ):
-    print("=" * 60)
-    print("USER =", user)
-    print("FILE =", foto.filename)
     # ambil tenant dari token
     tenant = user.get("tenant_id")
-    print("TENANT =", tenant)
 
     if not tenant:
-        print("TENANT TIDAK DITEMUKAN!")
         return RedirectResponse("/pengurus?error=tenant", status_code=302)
 
     # folder profil tenant
     folder = profil_dir(tenant)
-    print("FOLDER =", folder)
 
     # nama file berdasarkan nama pengurus
     filename = slugify(user["nama"]) + ".webp"
 
     # simpan sementara
     tmp = Path(folder) / ("tmp_" + foto.filename)
-
-    print("TMP =", tmp)
-    print("DEST =", Path(folder) / filename)
 
     with open(tmp, "wb") as buffer:
         shutil.copyfileobj(foto.file, buffer)
@@ -127,23 +117,15 @@ async def get_profile_photo(
     return FileResponse("web/static/img/default-avatar.webp")
 
 @router.get("/logo")
-async def get_logo(
-    user: dict = Depends(get_current_user)
-):
-    tenant = user["tenant_id"]
+async def get_logo():
+
+    tenant = current_tenant()
 
     file = logo_file(tenant)
 
-    print("=" * 60)
-    print("TENANT =", tenant)
-    print("FILE =", file)
-    print("EXISTS =", file.exists())
-
     if file.exists():
-        print("RETURN FILE")
         return FileResponse(file)
 
-    print("RETURN DEFAULT")
     return FileResponse("web/static/img/default-logo.webp")
 
 @router.post("/pengurus/tambah")
