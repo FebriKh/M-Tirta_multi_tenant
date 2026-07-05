@@ -101,35 +101,23 @@
 
 <!-- tambahkan setelah section sinkron kas -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-6">
-    <div class="border-b border-gray-100">
-        <div class="flex" id="dev-tabs">
-            <button onclick="switchTab('tab-warna')"
-                    class="dev-tab px-6 py-3 text-sm font-medium border-b-2 border-primary text-primary" 
-                    id="btn-tab-warna">
-                 Warna & Teks
-            </button>
-            <button onclick="switchTab('tab-media')"
-                    class="dev-tab px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
-                    id="btn-tab-media">
-                 Logo & Background
-            </button>
-            <button onclick="switchTab('tab-info')"
-                    class="dev-tab px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
-                    id="btn-tab-info">
-                 Info Organisasi
-            </button>
-        </div>
-    </div>
 
-    <!-- TAB WARNA -->
-    <div id="tab-warna" class="p-6">
+    <!-- TEMA APLIKASI -->
+    <div class="p-6">
+        <h2 class="text-lg font-semibold text-gray-800">
+            Tema Aplikasi
+        </h2>
+
+        <p class="text-sm text-gray-500 mb-5">
+            Atur warna utama yang digunakan di seluruh aplikasi.
+        </p>
         {% if request.query_params.get('warna') %}
         <div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm"> Warna berhasil disimpan!</div>
         {% endif %}
         <form method="POST" action="/developer/simpan-warna" class="space-y-4">
             <div class="grid grid-cols-2 gap-4 max-w-md">
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-2">Warna Primer (sidebar)</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">Warna Utama</label>
                     <div class="flex gap-2 items-center">
                         <input type="color" name="warna_primer"
                                value="{{ cfg.warna_primer or '#1F4E79' }}"
@@ -138,7 +126,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-2">Warna Aksen (hover)</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-2">Warna Aksen</label>
                     <div class="flex gap-2 items-center">
                         <input type="color" name="warna_aksen"
                                value="{{ cfg.warna_aksen or '#2E86AB' }}"
@@ -153,100 +141,5 @@
             </button>
         </form>
     </div>
-
-    <!-- TAB LOGO & BG -->
-    <div id="tab-media" class="p-6 hidden">
-        {% if request.query_params.get('logo') %}
-        <div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm"> Logo berhasil diupload!</div>
-        {% endif %}
-        {% if request.query_params.get('bg') %}
-        <div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm"> Background berhasil diupload!</div>
-        {% endif %}
-
-        <div class="grid grid-cols-2 gap-8">
-            <!-- LOGO -->
-            <div>
-                <h3 class="font-medium text-gray-800 mb-1">Logo Organisasi</h3>
-                <p class="text-xs text-gray-500 mb-3">PNG/JPG, maks 1MB. Disarankan 200x200px.</p>
-                {% if cfg.logo_file %}
-                <div class="mb-3">
-                    <img src="/static/assets/{{ cfg.logo_file }}"
-                         class="w-16 h-16 rounded-lg object-contain border border-gray-200">
-                    <p class="text-xs text-gray-400 mt-1">{{ cfg.logo_file }}</p>
-                </div>
-                {% endif %}
-                <form method="POST" action="/developer/upload-logo" enctype="multipart/form-data">
-                    <input type="file" name="logo" accept="image/*" required
-                           class="block text-xs text-gray-500 mb-2">
-                    <button type="submit"
-                            class="bg-primary text-white px-3 py-1.5 rounded-lg text-xs hover:bg-accent transition">
-                        Upload Logo
-                    </button>
-                </form>
-            </div>
-
-            <!-- BACKGROUND -->
-            <div>
-                <h3 class="font-medium text-gray-800 mb-1">Background Halaman Login</h3>
-                <p class="text-xs text-gray-500 mb-3">JPG/PNG, maks 3MB. Landscape lebih baik.</p>
-                {% if cfg.bg_login %}
-                <p class="text-xs text-gray-400 mb-2">Saat ini: {{ cfg.bg_login }}</p>
-                {% endif %}
-                <form method="POST" action="/developer/upload-bg" enctype="multipart/form-data">
-                    <input type="hidden" name="halaman" value="login">
-                    <input type="file" name="bg" accept="image/*" required
-                           class="block text-xs text-gray-500 mb-2">
-                    <button type="submit"
-                            class="bg-primary text-white px-3 py-1.5 rounded-lg text-xs hover:bg-accent transition">
-                        Upload Background
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- TAB INFO -->
-    <div id="tab-info" class="p-6 hidden">
-        {% if request.query_params.get('info') %}
-        <div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm"> Info organisasi berhasil disimpan!</div>
-        {% endif %}
-        <form method="POST" action="/developer/simpan-info" class="space-y-4 max-w-md">
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Nama Aplikasi</label>
-                <input type="text" name="nama_app"
-                       value="{{ cfg.nama_app or 'M-Tirta' }}"
-                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Nama Organisasi</label>
-                <input type="text" name="nama_org"
-                       value="{{ cfg.nama_org or 'PAM Tirta Lestari IV' }}"
-                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Alamat Organisasi</label>
-                <input type="text" name="alamat_org"
-                       value="{{ cfg.alamat_org or '' }}"
-                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-            </div>
-            <button type="submit"
-                    class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-accent transition">
-                Simpan Info
-            </button>
-        </form>
-    </div>
 </div>
-
-<script>
-function switchTab(tabId) {
-    document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('hidden'));
-    document.querySelectorAll('.dev-tab').forEach(b => {
-        b.classList.remove('border-primary', 'text-primary');
-        b.classList.add('border-transparent', 'text-gray-500');
-    });
-    document.getElementById(tabId).classList.remove('hidden');
-    document.getElementById('btn-' + tabId).classList.add('border-primary', 'text-primary');
-    document.getElementById('btn-' + tabId).classList.remove('border-transparent', 'text-gray-500');
-}
-</script>
 {% endblock %}
