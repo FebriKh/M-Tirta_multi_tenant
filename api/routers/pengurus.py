@@ -108,7 +108,6 @@ async def simpan_profil_organisasi(
     nama_org   : str = Form(...),
     alamat_org : str = Form(""),
     telepon    : str = Form(""),
-    whatsapp   : str = Form(""),
     email      : str = Form(""),
     website    : str = Form(""),
     user        : dict = Depends(get_current_user)
@@ -119,7 +118,6 @@ async def simpan_profil_organisasi(
             "nama_org": nama_org,
             "alamat_org": alamat_org,
             "telepon": telepon,
-            "whatsapp": whatsapp,
             "email": email,
             "website": website,
         }

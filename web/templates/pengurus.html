@@ -208,11 +208,11 @@
 
 <!-- MODAL PROFIL ORGANISASI -->
 <div id="modal-info"
-     class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+     class="hidden fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto p-4">
 
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg my-8 max-h-[90dvh] overflow-y0auto">
 
-        <div class="flex items-center justify-between px-6 py-4 border-b">
+        <div class="flex items-center justify-between px-5 py-3 border-b">
 
             <h2 class="font-semibold text-lg">
                 Profil Organisasi
@@ -230,13 +230,13 @@
         <form
             action="/pengurus/profil-organisasi"
             method="POST"
-            class="p-6 space-y-4">
+            class="p-5 space-y-3">
 
             <div class="text-center">
 
                 <img
                     src="/logo?v={{ range(1,999999)|random }}"
-                    class="w-20 h-20 object-contain mx-auto mb-3">
+                    class="w-16 h-16 object-contain mx-auto mb-1">
 
             </div>
 
@@ -277,20 +277,6 @@
                     type="text"
                     name="telepon"
                     value="{{ cfg.telepon }}"
-                    class="w-full border rounded-lg px-3 py-2">
-
-            </div>
-
-            <div>
-
-                <label class="block text-sm mb-1">
-                    WhatsApp
-                </label>
-
-                <input
-                    type="text"
-                    name="whatsapp"
-                    value="{{ cfg.whatsapp }}"
                     class="w-full border rounded-lg px-3 py-2">
 
             </div>
