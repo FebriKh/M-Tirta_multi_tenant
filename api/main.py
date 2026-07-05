@@ -4,10 +4,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from shared.backend.database import engine, Base
-from shared.backend.tenant_assets import current_tenant, profil_dir, asset_dir
+from shared.backend.tenant_assets import current_tenant, profil_dir, asset_dir, tenant_config
 from shared.backend.models import *
 
 # buat tabel kalau belum ada
@@ -45,6 +45,34 @@ app.include_router(pengeluaran_router)
 app.include_router(pengurus_router)
 app.include_router(laporan_router)
 app.include_router(developer_router)
+
+@app.get("/manifest.json")
+async def manifest():
+
+    cfg = tenant_config(current_tenant())
+
+    return JSONResponse({
+        "name": cfg.get("nama_app", "M-Tirta"),
+        "short_name": cfg.get("nama_app", "M-Tirta"),
+        "description": cfg.get("nama_org", ""),
+        "start_url": "/dashboard",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": cfg.get("warna_primer", "#1a56db"),
+        "orientation": "portrait",
+        "icons": [
+            {
+                "src": "/logo",
+                "sizes": "192x192",
+                "type": "image/webp"
+            },
+            {
+                "src": "/logo",
+                "sizes": "512x512",
+                "type": "image/webp"
+            }
+        ]
+    })
 
 @app.get("/")
 async def root():

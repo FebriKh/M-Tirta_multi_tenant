@@ -7,8 +7,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="M-Tirta">
-    <link rel="manifest" href="/static/manifest.json">
-    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+
+    <link rel="icon"
+          type="image/webp"
+          href="/logo?v={{ range(1,999999)|random }}">
+
+    <link rel="apple-touch-icon"
+          href="/logo?v={{ range(1,999999)|random }}">
+
+    <link rel="manifest" href="/manifest.json">
     <title>{% block title %}M-Tirta{% endblock %}</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
