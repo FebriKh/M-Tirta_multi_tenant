@@ -40,8 +40,7 @@ async def dashboard(
     # pemasukan bersih bulan ini
     pemasukan_bersih = (
         (kas.aktual_terkumpul or 0) +
-        (kas.pemasukan_pemasangan or 0) +
-        (kas.saldo_bulan_lalu or 0) -   # inject dana masuk ke saldo_bulan_lalu
+        (kas.pemasukan_pemasangan or 0) -
         total_keluar
     )
 
